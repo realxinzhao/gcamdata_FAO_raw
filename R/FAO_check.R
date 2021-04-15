@@ -18,9 +18,10 @@ Ctry_FAO_replace <- data.frame(
                 "Pitcairn", "Saint Helena, Ascension and Tristan da Cunha",
                 "South Georgia and the South Sandwich Islands",
                 "Sint Maarten (Dutch part)",
+                "Saint-Martin (French part)",
                 "United Kingdom of Great Britain and Northern Ireland",
                 "North Macedonia"),
-  FAO_country = c(rep("ctry_rm",11),
+  FAO_country = c(rep("ctry_rm",12),
                   #"Sint Maarten (Dutch Part)",
                   "United Kingdom",
                   "The former Yugoslav Republic of Macedonia")
@@ -40,6 +41,60 @@ FAO_ctry_remap <- function(.df, .colname = "countries"){
     select(-FAO_country) %>%
     rename_(.dots=setNames(list("countries"), .colname))
 }
+
+
+#Draw information from a dataset
+FAO_tbl_summary <- function(.tbl, col.cnty = "countries", col.item = "item"){
+  assert_that(is.character(.tbl))
+
+  get(.tbl) %>% gcamdata::gather_years() -> .tbl1
+  list(
+    name = .tbl,
+    ncountry = length(unique(.tbl1[col.cnty])%>% pull()),
+    nitem = length(unique(.tbl1[col.item])%>% pull()),
+    nyear = length(unique(.tbl1$year)),
+    start_year = min(unique(.tbl1$year)),
+    end_year = max(unique(.tbl1$year)) ,
+    NA_perc = paste0(round(.tbl1 %>%
+                             summarise(sum(is.na(value))/n()) %>%
+                             as.numeric() *100 , 1), "%")
+  )
+}
+
+#************************************
+#Create a summary table including datasets update information
+
+# need a list of df being loaded
+update_summary <- function(data_map, replace_out = F){
+  assert_that(is.data.frame(data_map))
+  assert_that(is.logical(replace_out))
+
+  lapply(data_map %>% pull(name), function(df){
+    if (df == "FAO_BilateralTrade") {
+      data.frame(t(sapply(FAO_tbl_summary(df, "Reporter.Countries", "Item") %>% unlist(),c)))
+    } else {
+      data.frame(t(sapply(FAO_tbl_summary(df) %>% unlist(),c)))
+    }
+  }) %>% bind_rows() -> data_summary
+
+  data_summary %>%
+    left_join(data_map %>%
+                left_join(FAOsearch() %>% select(datasetcode, "FAO_update_date" = dateupdate),
+                          by = c( "FAO_domain_code" = "datasetcode")),
+              by = "name") %>% mutate(log_date = Sys.Date()) -> log_summary
+  if (isTRUE(replace_out)) {
+    readr::write_csv(log_summary,"output/log_summary.csv")
+  }
+  return(log_summary)
+}
+
+
+
+
+
+
+
+
 
 
 

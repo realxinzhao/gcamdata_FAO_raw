@@ -11,6 +11,23 @@ download <- F
 dir.create(data_folder)
 dir.create("output")
 
+#Check log first
+readr::read_csv("output/log_summary.csv") -> log_summary
+
+#data needed in gcam aglu/FAO & corresponding FAO domain
+GCAM_FAO <- list("FAO_GDP_deflators",
+                 "FAO_ag_an_ProducerPrice",
+                 "FAO_BilateralTrade",
+                 "FAO_For_Exp_m3_USD_FORESTAT",
+                 "FAO_For_Imp_m3_FORESTAT",
+                 "FAO_For_Prod_m3_FORESTAT",
+                 "FAO_For_Exp_m3_FORESTAT")
+FAO_domain_code = c("PD", "PP", "TM", rep("FO",4))
+
+data_map <- data.frame(name = GCAM_FAO %>% unlist(), FAO_domain_code)
+
+
+
 #************************************
 #*PD:  FAO_GDP_deflators
 code = "PD"
@@ -30,8 +47,7 @@ FAO_GDP_deflators <- PD %>%
   spread(year, value) %>%
   FAO_ctry_remap()
 
-nyears = length(c(unique(c(PD$year, GDP_deflator_Taiwan$year))))
-col_type = paste0("cicc", paste0(rep("n",nyears), collapse = ""))
+col_type = paste0("cicc", paste0(rep("n",FAO_tbl_summary("FAO_GDP_deflators")["nyear"]), collapse = ""))
 
 fn <- "FAO_GDP_Deflators.csv"
 fqfn <- paste0("output/", fn)
@@ -151,6 +167,74 @@ cmnts <- c(
 cat(paste("#", cmnts), file = fqfn, sep = "\n", append = TRUE)
 readr::write_csv(FAO_BilateralTrade,fqfn, append = TRUE, col_names = TRUE,na = "")
 
+
+
+
+
+#************************************
+#*Forest economics
+#*FO:  FAO_For_Prod_m3_FORESTAT
+code = "FO"
+get_faostat_bulk(code = code, data_folder = data_folder, download = download) -> FO
+
+
+unique(FO$element)
+
+FAO_For_Prod_m3_FORESTAT <- FO %>%
+  filter(element == "Production", item == "Roundwood") %>%
+  select(countries = area,`country codes` = `area code`,
+         item, `item codes` = `item code`, element, `element codes` = `element code`,
+         year, value) %>%
+  spread(year, value) %>%
+  FAO_ctry_remap()
+
+nyears = length(FAO_For_Prod_m3_FORESTAT) - 6
+col_type = paste0("cicici", paste0(rep("n",nyears), collapse = ""))
+
+fn <- "FAO_For_Prod_m3_FORESTAT.csv"
+fqfn <- paste0("output/", fn)
+suppressWarnings(file.remove(fqfn))
+cmnts <- c(
+  paste0("File: ", fn),
+  "Title: FAO forestry production (roundwood total) by country.year",
+  "Units: m3",
+  paste0("Source: FAOSTAT (domain:", code ," FAO.udpate:",FAOsearch(code = code)$dateupdate,")"),
+  paste0("Date of last update: ", Sys.Date()),
+  paste0("Column types: ",col_type) ,
+  "----------"
+)
+cat(paste("#", cmnts), file = fqfn, sep = "\n", append = TRUE)
+readr::write_csv(FAO_For_Prod_m3_FORESTAT, fqfn, append = TRUE, col_names = TRUE, na = "")
+
+#************************************
+#*FO:  FAO_For_Imp_m3_FORESTAT
+
+FAO_For_Imp_m3_FORESTAT <- FO %>%
+  filter(element == "Import Quantity", item == "Roundwood") %>%
+  select(countries = area,`country codes` = `area code`,
+         item, `item codes` = `item code`, element, `element codes` = `element code`,
+         year, value) %>%
+  spread(year, value) %>%
+  FAO_ctry_remap()
+
+col_type = paste0("cicici", paste0(rep("n",FAO_tbl_summary("FAO_For_Imp_m3_FORESTAT")["nyear"]), collapse = ""))
+
+fn <- "FAO_For_Imp_m3_FORESTAT.csv"
+fqfn <- paste0("output/", fn)
+suppressWarnings(file.remove(fqfn))
+cmnts <- c(
+  paste0("File: ", fn),
+  "Title: FAO forestry imports (roundwood total) by country.year",
+  "Units: m3",
+  paste0("Source: FAOSTAT (domain:", code ," FAO.udpate:",FAOsearch(code = code)$dateupdate,")"),
+  paste0("Date of last update: ", Sys.Date()),
+  paste0("Column types: ",col_type) ,
+  "----------"
+)
+cat(paste("#", cmnts), file = fqfn, sep = "\n", append = TRUE)
+readr::write_csv(FAO_For_Imp_m3_FORESTAT, fqfn, append = TRUE, col_names = TRUE, na = "")
+
+
 #************************************
 #*FO:  FAO_For_Exp_m3_USD_FORESTAT
 code = "FO"
@@ -173,15 +257,15 @@ FO %>%
   FAO_ctry_remap()->
   FAO_For_Exp_m3_USD_FORESTAT
 
-nyears = length(unique(FO$year))
-col_type = paste0("cicici", paste0(rep("n",nyears), collapse = ""))
+
+col_type = paste0("cicici", paste0(rep("n",FAO_tbl_summary("FAO_For_Exp_m3_USD_FORESTAT")["nyear"]), collapse = ""))
 
 fn <- "FAO_For_Exp_m3_USD_FORESTAT.csv"
 fqfn <- paste0("output/", fn)
 suppressWarnings(file.remove(fqfn))
 cmnts <- c(
   paste0("File: ", fn),
-  "Title: FAO historical forests export qunatity and export value",
+  "Title: FAO forests export qunatity and export value by country.year",
   "Units: Export Quantity in m3; Export Value in 1000 US$",
   paste0("Source: FAOSTAT (domain:", code ," FAO.udpate:",FAOsearch(code = code)$dateupdate,")"),
   paste0("Date of last update: ", Sys.Date()),
@@ -191,14 +275,49 @@ cmnts <- c(
 cat(paste("#", cmnts), file = fqfn, sep = "\n", append = TRUE)
 readr::write_csv(FAO_For_Exp_m3_USD_FORESTAT,fqfn, append = TRUE, col_names = TRUE,na = "")
 
-#************************************
 
-lapply(list(FAO_GDP_deflator$countries,
+#************************************
+#*FO:  FAO_For_Exp_m3_FORESTAT
+code = "FO"
+FAO_For_Exp_m3_FORESTAT <- FAO_For_Exp_m3_USD_FORESTAT %>%
+  filter(element == "Export Quantity (m3)")
+
+col_type = paste0("cicici", paste0(rep("n",FAO_tbl_summary("FAO_For_Exp_m3_FORESTAT")["nyear"]), collapse = ""))
+
+fn <- "FAO_For_Exp_m3_FORESTAT.csv"
+fqfn <- paste0("output/", fn)
+suppressWarnings(file.remove(fqfn))
+cmnts <- c(
+  paste0("File: ", fn),
+  "Title: FAO forests export qunatity by country.year",
+  "Units: Export Quantity in m3",
+  paste0("Source: FAOSTAT (domain:", code ," FAO.udpate:",FAOsearch(code = code)$dateupdate,")"),
+  paste0("Date of last update: ", Sys.Date()),
+  paste0("Column types: ",col_type) ,
+  "----------"
+)
+cat(paste("#", cmnts), file = fqfn, sep = "\n", append = TRUE)
+readr::write_csv(FAO_For_Exp_m3_FORESTAT,fqfn, append = TRUE, col_names = TRUE,na = "")
+
+#************************************
+#Check mapping
+lapply(list(FAO_GDP_deflators$countries,
+            FAO_ag_an_ProducerPrice$countries,
             FAO_BilateralTrade$Reporter.Countries,
             FAO_BilateralTrade$Partner.Countries,
-            FAO_For_Exp_m3_USD_FORESTAT$countries), function(cnty){
+            FAO_For_Exp_m3_USD_FORESTAT$countries,
+            FAO_For_Imp_m3_FORESTAT$countries,
+            FAO_For_Prod_m3_FORESTAT$countries,
+            FAO_For_Exp_m3_FORESTAT$countries), function(cnty){
               setdiff(
                 unique(cnty),
                 unique(AGLU_Ctry_Unique$FAO_country)
               )
             })
+
+#************************************
+#update summary
+update_summary(data_map, replace_out = F)
+
+
+

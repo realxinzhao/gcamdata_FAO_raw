@@ -1,4 +1,4 @@
-
+#Some functions are duplicated or adapted from FAOSTAT package
 
 FAOsearch <- function (code = NULL, dataset = NULL, topic = NULL, latest = FALSE, full = TRUE)
 {
