@@ -7,6 +7,7 @@ source("R/FAO_Check.R")
 
 #fao_metadata <- FAOsearch()
 data_folder <- "data_raw"
+out_dir <- "output"
 download <- F
 dir.create(data_folder)
 dir.create("output")
@@ -107,8 +108,8 @@ FAO_ag_an_ProducerPrice <- PP %>%
   FAO_ctry_remap()
 
 str(FAO_ag_an_ProducerPrice)
-nyears = length(unique(PP$year))
-col_type = paste0("cicici", paste0(rep("n",nyears), collapse = ""))
+
+col_type = paste0("cicc", paste0(rep("n",FAO_tbl_summary("FAO_ag_an_ProducerPrice")["nyear"]), collapse = ""))
 
 fn <- "FAO_ag_an_ProducerPrice.csv"
 fqfn <- gzfile(paste0("output/", fn, ".gz"))
