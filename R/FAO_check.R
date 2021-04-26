@@ -17,19 +17,19 @@ unique(FAO_ctry$Country)
 AGLU_ctry <- readr::read_csv("input/GCAMv5.3/aglu/AGLU_ctry.csv", comment = "#")
 AGLU_Ctry_Unique <-distinct(AGLU_ctry,FAO_country,.keep_all = TRUE)
 
-GCAM_FAO_item <- readr::read_csv("input/GCAMv5.3/aglu/FAO_ag_items_PRODSTAT.csv", comment = "#")
+GCAM_FAO_item <- readr::read_csv("input/GCAMv5.3/aglu/FAO/FAO_ag_items_PRODSTAT.csv", comment = "#")
 
-setdiff(
-  unique(GCAM_FAO_item$item),
-  lookup(.lookupvalue = "QC",.lookup_df = FAO_item,
-         .lookup_col = "FAO_domain_code",.target_col = "item") %>% pull()
-)
-setdiff(
-  lookup(.lookupvalue = "QC",.lookup_df = FAO_item,
-         .lookup_col = "FAO_domain_code",.target_col = "item") %>% pull(),
-  unique(GCAM_FAO_item$item)
-
-)
+# setdiff(
+#   unique(GCAM_FAO_item$item),
+#   lookup(.lookupvalue = "QC",.lookup_df = FAO_item,
+#          .lookup_col = "FAO_domain_code",.target_col = "item") %>% pull()
+# )
+# setdiff(
+#   lookup(.lookupvalue = "QC",.lookup_df = FAO_item,
+#          .lookup_col = "FAO_domain_code",.target_col = "item") %>% pull(),
+#   unique(GCAM_FAO_item$item)
+#
+# )
 
 
 

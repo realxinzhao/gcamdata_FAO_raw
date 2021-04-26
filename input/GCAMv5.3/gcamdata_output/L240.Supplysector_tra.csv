@@ -1,0 +1,18 @@
+# We remove any regions for which agriculture and land use are not modeled.
+region,supplysector,output.unit,input.unit,price.unit,logit.year.fillout,logit.exponent,logit.type
+USA,traded corn,Mt,Mt,1975$/kg,1975,-2.6,NA
+USA,traded fibercrop,Mt,Mt,1975$/kg,1975,-5,NA
+USA,traded misccrop,Mt,Mt,1975$/kg,1975,-4.81,NA
+USA,traded oilcrop,Mt,Mt,1975$/kg,1975,-5.970000000000001,NA
+USA,traded othergrain,Mt,Mt,1975$/kg,1975,-2.6,NA
+USA,traded palmfruit,Mt,Mt,1975$/kg,1975,-5.970000000000001,NA
+USA,traded rice,Mt,Mt,1975$/kg,1975,-5.79,NA
+USA,traded roottuber,Mt,Mt,1975$/kg,1975,-4.81,NA
+USA,traded sugarcrop,Mt,Mt,1975$/kg,1975,-5.4,NA
+USA,traded wheat,Mt,Mt,1975$/kg,1975,-8.9,NA
+USA,traded beef,Mt,Mt,1975$/kg,1975,-7.7,NA
+USA,traded dairy,Mt,Mt,1975$/kg,1975,-7.3,NA
+USA,traded pork,Mt,Mt,1975$/kg,1975,-8.8,NA
+USA,traded poultry,Mt,Mt,1975$/kg,1975,-8.8,NA
+USA,traded sheepgoat,Mt,Mt,1975$/kg,1975,-7.7,NA
+USA,traded forest,billion m3,billion m3,1975$/m3,1975,-5,NA
