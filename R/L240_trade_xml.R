@@ -159,6 +159,7 @@ gcamdata::run_xml_conversion(ag_trade.xml)
 
 #*****************************
 aglu.TRADED_CROPS.Bilateral0 <- tolower(c("Corn", "Rice", "Wheat", "OilCrop", "OtherGrain", "PalmFruit"))
+aglu.TRADED_CROPS.Bilateral0 <- tolower(c(aglu.TRADED_CROPS, aglu.TRADED_MEATS))
 aglu.TRADED_CROPS.Bilateral <-paste0("traded ", aglu.TRADED_CROPS.Bilateral0)
 aglu.TRADED_CROPS.Bilateral1 <-paste0("imported ", aglu.TRADED_CROPS.Bilateral0)
 
@@ -192,7 +193,6 @@ for (tb in c("L240.Supplysector_tra",
   Addtradedmarkets(tb)
 }
 
-L240.TechCoef_tra1
 
 Bilateral_export_share %>% group_by(GCAM_commodity, reporter) %>% summarise(exportshare = sum(exportshare))
 
@@ -205,7 +205,8 @@ lapply(unique(Bilateral_export_share$reporter), function(importor){
                 filter(partner == importor) %>%
                 select(-GCAM_commodity, -reporter),
               by = c("region" = "partner", "supplysector", "subsector")) %>%
-    mutate(calOutputValue = exportshare  * calOutputValue)
+    mutate(calOutputValue = exportshare  * calOutputValue)%>% 
+        select(-exportshare) 
   }) %>% bind_rows() %>%
   bind_rows(
     L240.Production_tra %>%
@@ -213,6 +214,27 @@ lapply(unique(Bilateral_export_share$reporter), function(importor){
   L240.Production_tra1
 
 ################
+source("R/fn.faostat.R")
+source("R/FAO_Check.R")
+
+code = "TM"; data_folder <- "data_raw"; download <- F
+get_faostat_bulk(code = code, data_folder = data_folder, download = download) -> TM
+FAO_BilateralTrade <- TM %>%
+  filter(element %in% c("Import Quantity", "Export Quantity"),
+         year >= 2008, year <= 2017)  %>%
+  select(Reporter.Country.Code = `reporter country code`,
+         Reporter.Countries = `reporter countries`,
+         Partner.Country.Code = `partner country code`,
+         Partner.Countries = `partner countries`,
+         Item.Code = `item code`,
+         Item = item,
+         Element.Code = `element code`,
+         Element = element,
+         Unit = unit,
+         year, value) %>%
+  spread(year, value) %>%
+  FAO_ctry_remap("Reporter.Countries") %>%
+  FAO_ctry_remap("Partner.Countries")
 
 FAO_ag_items_TRADE <- readr::read_csv("input/GCAMv5.3/aglu/FAO/FAO_ag_items_TRADE.csv", comment = "#")
 
@@ -349,3 +371,17 @@ create_xml(file.path(xml_dir, "ag_trade_bi.xml")) %>%
 
 ag_trade.xml %>%
   gcamdata::run_xml_conversion()
+  
+  
+  
+
+	### PART 3: Enabling bilateral Ag trade by adding regional traded sectors to all (exporting) regions
+	##Change top Armington nest to regional markets
+
+	#L240.TechCoef_reg %>%
+	#filter(subsector %in% paste0("imported ", tolower(c(aglu.TRADED_CROPS, aglu.TRADED_MEATS)))) %>%
+	#  mutate(market.name = region) %>% bind_rows(
+	#	L240.TechCoef_reg %>% 
+	#	filter(!subsector %in% paste0("imported ", tolower(c(aglu.TRADED_CROPS, aglu.TRADED_MEATS))))
+	#  ) -> L240.TechCoef_reg
+
